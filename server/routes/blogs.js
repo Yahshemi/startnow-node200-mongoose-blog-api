@@ -28,55 +28,44 @@ router.get("/:id", (req, res) => {
     .catch(e => res.status(500).send("bad"));
 });
 
-// router.post('/', (req, res) => {
-//   let theUser = null;
-//   let newBlog = new Blog(req.body);
+router.post("/", (req, res) => {
+  // New higher scope variable
+  let dbUser;
+  // Create a blog
+  const newBlog = new Blog(req.body);
+  
+  // Fetch the user from the database
+  User.findById(req.body.authorId)
+    .then(user => {
+      // Store the fetched user in higher scope variable
+      dbUser = user;
 
-//   User
-//       .findById(req.body.authorId)
-//       .then(user => {
-//           // console.log("--- USER FROM DB ---");
-//           // console.log("user", user);
+      // Bind the user to it
+      newBlog.author = user._id;
 
-//           theUser = user;
-//           newBlog.author = user._id;
-//           return newBlog.save();
-//       })
-//       .then(blog => {
-//           console.log("Saved blog is", blog);
+      // Save it to the database
+      return newBlog.save();
+    })
+    .then(blog => {
+      // Push the saved blog to the array of blogs associated with the User
+      dbUser.blogs.push(blog);
 
-//           theUser.blogs.push(blog);
-//           theUser
-//               .save()
-//               .then(() => res.status(201).send(blog))
-//       });
+      // Save the user back to the database and respond to the original HTTP request with a copy of the newly created blog.
+      dbUser.save().then(() => res.status(201).json(blog));
+    });
+});
+
+// .then(blog => {
+//   console.log("Saved blog is", blog);
+
+//   theUser.blogs.push(blog);
+//   theUser
+//       .save()
+//       .then(() => res.status(201).send(blog))
 // });
 
 
 
-
-
-
-// router.post("/", (req, res) => {
-//   let dbUser = null;
-//   let newBlog = new Blog(req.body);
-
-//   User
-//   // Fetch the user from the database.
-//   .findById(req.body.authorId)
-//     .then(user => {     
-//   // Create a blog.
-//       theUser = user;
-//       newBlog.author = user._id;
-//       return newBlog.save();
-//     })
-//     .then(blog => {
-//       console.log("Saved blog is", blog);
-
-//       theUser.blogs.push(blog);
-//       theUser.save().then(() => res.status(201).send(blog));
-//     });
-// });
 
 router.put("/:id", (req, res) => {
   Blog.findByIdAndUpdate(req.params.id, { $set: req.body })
@@ -97,3 +86,5 @@ router.delete("/:id", (req, res) => {
 });
 
 module.exports = router;
+
+console.log();
